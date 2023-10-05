@@ -1,0 +1,66 @@
+# [START servicemesh_release_canary_gateway_api_microservices_demo]
+---
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: Gateway
+metadata:
+  name: gateway
+spec:
+  gatewayClassName: istio
+  listeners:
+  - name: http
+    port: 80
+    protocol: HTTP
+    allowedRoutes:
+      namespaces:
+        from: Same
+---
+# Traffic shiffting for ingress traffic
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: frontend
+spec:
+  parentRefs:
+  - name: gateway
+  rules:
+  - matches:
+    - path:
+        value: /
+    backendRefs:
+    - group: ""
+      kind: Service
+      name: frontend-v1
+      port: 80
+      weight: 90
+    - group: ""
+      kind: Service
+      name: frontend-v2
+      port: 80
+      weight: 10
+---
+# Traffic shiffting for mesh traffic
+apiVersion: gateway.networking.k8s.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: productcatalogservice
+spec:
+  parentRefs:
+  - group: ""
+    kind: Service
+    name: productcatalogservice
+  rules:
+  - matches:
+    - path:
+        value: /
+    backendRefs:
+    - group: ""
+      kind: Service
+      name: productcatalogservice-v1
+      port: 3550
+      weight: 90
+    - group: ""
+      kind: Service
+      name: productcatalogservice-v2
+      port: 3550
+      weight: 10
+# [END servicemesh_release_canary_gateway_api_microservices_demo]
